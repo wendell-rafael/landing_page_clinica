@@ -21,10 +21,12 @@ no navegador do usuário, via HTML5 Canvas.
 ## Estrutura
 
 ```
-index.html            # landing page + editor
-assets/css/style.css  # estilos
-assets/js/frames.js   # molduras (SVG 1080x1080 geradas por código)
-assets/js/app.js      # editor: upload, enquadramento, zoom e download
+index.html                     # landing page + editor
+404.html                       # página de endereço inexistente
+assets/css/style.css           # estilos
+assets/js/frames.js            # molduras (SVG 1080x1080 geradas por código)
+assets/js/app.js               # editor: upload, enquadramento, zoom e download
+.github/workflows/pages.yml    # publica o site na branch gh-pages
 ```
 
 ## Como rodar
