@@ -1,4 +1,7 @@
-name: Publicar no GitHub Pages
+name: Publicar site
+
+# O GitHub Pages deste repositório serve a branch gh-pages.
+# Este workflow copia o site da main para lá a cada push.
 
 on:
   push:
@@ -6,41 +9,35 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
-  pages: write
-  id-token: write
+  contents: write
 
 concurrency:
-  group: pages
+  group: publicar-site
   cancel-in-progress: false
 
 jobs:
-  deploy:
+  publicar:
     runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-
-      - name: Configurar Pages
-        uses: actions/configure-pages@v5
         with:
-          # Liga o GitHub Pages automaticamente na primeira execução
-          enablement: true
+          fetch-depth: 0
 
-      - name: Montar a pasta do site
+      - name: Atualizar a branch gh-pages
         run: |
-          mkdir -p _site
-          cp index.html _site/
-          cp -r assets _site/
-
-      - name: Enviar artefato
-        uses: actions/upload-pages-artifact@v3
-        with:
-          path: _site
-
-      - name: Publicar
-        id: deployment
-        uses: actions/deploy-pages@v4
+          set -e
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git fetch origin gh-pages
+          git checkout gh-pages
+          rm -rf assets index.html
+          git checkout "$GITHUB_SHA" -- index.html assets
+          touch .nojekyll
+          git add -A
+          if git diff --cached --quiet; then
+            echo "Nada mudou no site."
+            exit 0
+          fi
+          git commit -m "Publica site a partir de ${GITHUB_SHA:0:7}"
+          git push origin gh-pages
