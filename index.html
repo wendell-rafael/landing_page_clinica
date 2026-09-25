@@ -56,7 +56,7 @@
         </div>
         <ul class="hero-badges">
           <li>✓ 6 molduras prontas</li>
-          <li>✓ Texto personalizável</li>
+          <li>✓ Versão só com frase</li>
           <li>✓ Sem cadastro</li>
         </ul>
       </div>
@@ -93,7 +93,7 @@
         <li>
           <span class="step-num">1</span>
           <h3>Envie sua foto</h3>
-          <p>Baixe a foto do seu perfil ou tire uma nova e envie aqui. Você também pode arrastar o arquivo ou colar com Ctrl+V.</p>
+          <p>Baixe a foto do seu perfil ou tire uma nova e envie aqui. Você também pode arrastar o arquivo ou colar com Ctrl+V — ou dispensar a foto e gerar uma imagem só com a sua frase.</p>
         </li>
         <li>
           <span class="step-num">2</span>
@@ -121,15 +121,25 @@
             <div class="dropzone-empty">
               <svg viewBox="0 0 24 24" width="46" height="46" aria-hidden="true"><path fill="currentColor" d="M19 13v5a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-5h2v5h10v-5zM12 3l5 5h-3v6h-4V8H7z"/></svg>
               <p><strong>Arraste sua foto aqui</strong><br>ou clique no botão abaixo</p>
+              <p class="dropzone-alt">Sem foto? Escolha <strong>Só texto</strong> nas opções ao lado.</p>
               <button class="btn btn-primary" type="button" data-pick>Escolher foto</button>
             </div>
           </div>
-          <p class="hint">Dica: arraste a foto sobre a prévia para reposicionar e use dois dedos para dar zoom.</p>
+          <p class="hint hint-foto">Dica: arraste a foto sobre a prévia para reposicionar e use dois dedos para dar zoom.</p>
         </div>
 
         <div class="editor-controls">
           <div class="control-block">
-            <h3>1. Sua foto</h3>
+            <h3>1. Tipo de imagem</h3>
+            <div class="chip-row" role="group" aria-label="Tipo de imagem">
+              <button class="chip is-active" type="button" data-mode="foto" aria-pressed="true">Com foto</button>
+              <button class="chip" type="button" data-mode="texto" aria-pressed="false">Só texto</button>
+            </div>
+            <p class="hint">Em &ldquo;só texto&rdquo; a imagem sai sem foto nenhuma, só com a sua frase.</p>
+          </div>
+
+          <div class="control-block" id="bloco-foto">
+            <h3>2. Sua foto</h3>
             <div class="btn-row">
               <button class="btn btn-primary" type="button" data-pick>Escolher foto</button>
               <button class="btn btn-ghost" type="button" id="btn-center">Centralizar</button>
@@ -137,8 +147,17 @@
             <input type="file" id="file-input" accept="image/*" hidden>
           </div>
 
+          <div class="control-block" id="bloco-frase" hidden>
+            <h3>2. Sua frase</h3>
+            <textarea id="frase" class="text-input" rows="2" maxlength="90"
+                      aria-label="Frase da imagem">Sou Wendell e estou com o Lula</textarea>
+            <p class="hint">Ex.: &ldquo;Sou Wendell e estou com o Lula&rdquo;, &ldquo;Minha família é Lula&rdquo;, &ldquo;O Ceará é Lula&rdquo;.</p>
+            <h4 class="control-sub">Cor de fundo</h4>
+            <div class="chip-row" id="fundos" role="group" aria-label="Cor de fundo"></div>
+          </div>
+
           <div class="control-block">
-            <h3>2. Formato</h3>
+            <h3>3. Formato</h3>
             <div class="chip-row" role="group" aria-label="Formato da imagem">
               <button class="chip is-active" type="button" data-shape="circulo" aria-pressed="true">Redondo</button>
               <button class="chip" type="button" data-shape="arredondado" aria-pressed="false">Arredondado</button>
@@ -147,18 +166,18 @@
           </div>
 
           <div class="control-block">
-            <h3>3. Moldura</h3>
+            <h3>4. Moldura</h3>
             <div class="frames" id="frames"></div>
           </div>
 
           <div class="control-block">
-            <h3>4. Texto da moldura</h3>
+            <h3>5. Texto da moldura</h3>
             <input type="text" id="texto" class="text-input" maxlength="26" value="LULA 2026" aria-label="Texto exibido na moldura">
             <p class="hint">Ex.: LULA 2026, #LulaPresidente, seu estado ou seu movimento.</p>
           </div>
 
-          <div class="control-block">
-            <h3>5. Zoom</h3>
+          <div class="control-block" id="bloco-zoom">
+            <h3>6. Zoom</h3>
             <div class="zoom-row">
               <input type="range" id="zoom" min="100" max="400" value="100" step="1" aria-label="Zoom da foto">
               <output id="zoom-label">100%</output>
@@ -200,6 +219,10 @@
         <details>
           <summary>Qual o tamanho da imagem gerada?</summary>
           <p>1080×1080 pixels em PNG, resolução recomendada para foto de perfil em qualquer rede social.</p>
+        </details>
+        <details>
+          <summary>Dá para fazer sem foto, só com uma frase?</summary>
+          <p>Sim. Em &ldquo;Tipo de imagem&rdquo;, escolha &ldquo;Só texto&rdquo;: a imagem sai com a cor de fundo que você escolher, a sua frase no meio e a moldura por cima — sem precisar enviar foto nenhuma.</p>
         </details>
         <details>
           <summary>Funciona no celular?</summary>

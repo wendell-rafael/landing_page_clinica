@@ -7,7 +7,20 @@
 
   var SIZE = window.LulaFrames.SIZE;
 
+  // Fundos disponíveis no modo "só texto"
+  var FUNDOS = [
+    { id: 'vermelho', nome: 'Vermelho', de: '#D51A33', para: '#8E0C22', texto: '#FFFFFF' },
+    { id: 'amarelo', nome: 'Amarelo', de: '#FFD24A', para: '#E8951A', texto: '#8E0C22' },
+    { id: 'escuro', nome: 'Escuro', de: '#26282E', para: '#0B0C0F', texto: '#FFFFFF' },
+    { id: 'claro', nome: 'Claro', de: '#FFFFFF', para: '#EFE9E5', texto: '#C4122F' }
+  ];
+
+  var FONTE_FRASE = "'Archivo Black','Arial Black','Helvetica Neue',Arial,sans-serif";
+
   var state = {
+    modo: 'foto',       // 'foto' | 'texto'
+    frase: 'Sou Wendell e estou com o Lula',
+    fundoId: 'vermelho',
     image: null,        // HTMLImageElement | ImageBitmap
     zoom: 1,            // 1 = foto cobrindo o quadro
     offsetX: 0,         // deslocamento em pixels do canvas (1080)
@@ -89,13 +102,87 @@
     context.save();
     shapePath(context, state.shape, size);
     context.clip();
-    if (opaque) {
-      context.fillStyle = state.fundo;
-      context.fillRect(0, 0, size, size);
+    if (state.modo === 'texto') {
+      drawFundo(context, size);
+      drawFrase(context, size);
+    } else {
+      if (opaque) {
+        context.fillStyle = state.fundo;
+        context.fillRect(0, 0, size, size);
+      }
+      drawPhoto(context, size);
     }
-    drawPhoto(context, size);
     context.restore();
     if (frameImg) context.drawImage(frameImg, 0, 0, size, size);
+  }
+
+  function fundoAtual() {
+    for (var i = 0; i < FUNDOS.length; i++) if (FUNDOS[i].id === state.fundoId) return FUNDOS[i];
+    return FUNDOS[0];
+  }
+
+  function drawFundo(context, size) {
+    var f = fundoAtual();
+    var grad = context.createLinearGradient(0, 0, size, size);
+    grad.addColorStop(0, f.de);
+    grad.addColorStop(1, f.para);
+    context.fillStyle = grad;
+    context.fillRect(0, 0, size, size);
+  }
+
+  // Quebra a frase em linhas que caibam na largura disponível
+  function quebrarLinhas(context, texto, larguraMax) {
+    var linhas = [];
+    String(texto).split(/\n+/).forEach(function (paragrafo) {
+      var palavras = paragrafo.split(/\s+/).filter(Boolean);
+      if (!palavras.length) return;
+      var linha = palavras[0];
+      for (var i = 1; i < palavras.length; i++) {
+        var teste = linha + ' ' + palavras[i];
+        if (context.measureText(teste).width > larguraMax) {
+          linhas.push(linha);
+          linha = palavras[i];
+        } else {
+          linha = teste;
+        }
+      }
+      linhas.push(linha);
+    });
+    return linhas;
+  }
+
+  function drawFrase(context, size) {
+    var texto = (state.frase || '').trim();
+    if (!texto) return;
+
+    var larguraMax = size * (state.shape === 'circulo' ? 0.64 : 0.74);
+    var alturaMax = size * (state.shape === 'circulo' ? 0.40 : 0.46);
+    var fs = size * 0.135;
+    var linhas;
+
+    // Diminui o corpo da fonte até a frase caber na caixa
+    while (true) {
+      context.font = '900 ' + fs.toFixed(1) + 'px ' + FONTE_FRASE;
+      linhas = quebrarLinhas(context, texto, larguraMax);
+      var estoura = linhas.some(function (l) { return context.measureText(l).width > larguraMax; });
+      if ((!estoura && linhas.length * fs * 1.16 <= alturaMax) || fs <= size * 0.032) break;
+      fs *= 0.94;
+    }
+
+    var entrelinha = fs * 1.16;
+    var centro = size * (state.shape === 'circulo' ? 0.42 : 0.40);
+    var y = centro - ((linhas.length - 1) * entrelinha) / 2;
+
+    context.fillStyle = fundoAtual().texto;
+    context.textAlign = 'center';
+    context.textBaseline = 'middle';
+    linhas.forEach(function (linha, i) {
+      context.fillText(linha, size / 2, y + i * entrelinha);
+    });
+  }
+
+  function temConteudo() {
+    return state.modo === 'texto' ? !!(state.frase || '').trim() : !!state.image;
   }
 
   var renderPending = false;
@@ -274,8 +361,51 @@
     updateThumbs();
   }
 
+  function buildFundos() {
+    if (!el.fundos) return;
+    el.fundos.innerHTML = '';
+    FUNDOS.forEach(function (f) {
+      var btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'chip chip-cor' + (f.id === state.fundoId ? ' is-active' : '');
+      btn.setAttribute('aria-pressed', f.id === state.fundoId ? 'true' : 'false');
+      btn.dataset.fundo = f.id;
+      btn.innerHTML = '<span class="swatch" style="background:linear-gradient(135deg,' + f.de + ',' + f.para + ')"></span>' + f.nome;
+      btn.addEventListener('click', function () {
+        state.fundoId = f.id;
+        $$('[data-fundo]').forEach(function (b) {
+          var ativo = b.dataset.fundo === f.id;
+          b.classList.toggle('is-active', ativo);
+          b.setAttribute('aria-pressed', ativo ? 'true' : 'false');
+        });
+        updateThumbs();
+        render();
+      });
+      el.fundos.appendChild(btn);
+    });
+  }
+
+  function aplicarModo() {
+    var texto = state.modo === 'texto';
+    el.blocoFoto.hidden = texto;
+    el.blocoFrase.hidden = !texto;
+    el.blocoZoom.hidden = texto;
+    el.editor.classList.toggle('modo-texto', texto);
+    el.download.textContent = texto ? 'Baixar minha imagem' : 'Baixar minha foto';
+    el.download.disabled = !temConteudo();
+    if (texto) {
+      setStatus('Escreva sua frase, escolha a cor e a moldura, e baixe a imagem.');
+    } else {
+      setStatus(state.image
+        ? 'Arraste para posicionar e use o zoom.'
+        : 'Envie uma foto para começar.');
+    }
+    updateThumbs();
+    render();
+  }
+
   function updateThumbs() {
-    var photo = state.image ? thumbBackground() : null;
+    var photo = temConteudo() ? thumbBackground() : null;
     window.LulaFrames.list.forEach(function (frame) {
       var holder = el.frames.querySelector('[data-thumb="' + frame.id + '"]');
       if (!holder) return;
@@ -289,14 +419,20 @@
 
   var thumbCache = { key: '', url: '' };
   function thumbBackground() {
-    var key = state.zoom + '|' + state.offsetX + '|' + state.offsetY + '|' + (state.image ? state.image.width : 0);
+    var key = state.modo + '|' + state.fundoId + '|' + state.frase + '|' + state.zoom + '|' +
+      state.offsetX + '|' + state.offsetY + '|' + (state.image ? state.image.width : 0);
     if (thumbCache.key === key) return thumbCache.url;
     var c = document.createElement('canvas');
     c.width = c.height = 220;
     var cc = c.getContext('2d');
-    cc.fillStyle = state.fundo;
-    cc.fillRect(0, 0, 220, 220);
-    drawPhoto(cc, 220);
+    if (state.modo === 'texto') {
+      drawFundo(cc, 220);
+      drawFrase(cc, 220);
+    } else {
+      cc.fillStyle = state.fundo;
+      cc.fillRect(0, 0, 220, 220);
+      drawPhoto(cc, 220);
+    }
     thumbCache.key = key;
     thumbCache.url = c.toDataURL('image/jpeg', 0.75);
     return thumbCache.url;
@@ -305,7 +441,7 @@
   /* ---------------- download ---------------- */
 
   function download() {
-    if (!state.image) return;
+    if (!temConteudo()) return;
     setStatus('Preparando o download...');
     frameImage(state.frameId, state.shape, state.texto).then(function (frameImg) {
       var out = document.createElement('canvas');
@@ -317,12 +453,14 @@
         var url = URL.createObjectURL(blob);
         var a = document.createElement('a');
         a.href = url;
-        a.download = 'minha-foto-lula-2026.png';
+        a.download = (state.modo === 'texto' ? 'minha-imagem-lula-2026.png' : 'minha-foto-lula-2026.png');
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
         setTimeout(function () { URL.revokeObjectURL(url); }, 4000);
-        setStatus('Pronto! Sua foto foi baixada. Agora é só atualizar seu perfil.');
+        setStatus(state.modo === 'texto'
+          ? 'Pronto! Sua imagem foi baixada. Agora é só atualizar seu perfil.'
+          : 'Pronto! Sua foto foi baixada. Agora é só atualizar seu perfil.');
       }, 'image/png');
     });
   }
@@ -341,12 +479,19 @@
     el.status = $('#status');
     el.frames = $('#frames');
     el.texto = $('#texto');
+    el.frase = $('#frase');
+    el.fundos = $('#fundos');
+    el.blocoFoto = $('#bloco-foto');
+    el.blocoFrase = $('#bloco-frase');
+    el.blocoZoom = $('#bloco-zoom');
     if (!el.canvas) return;
 
     el.canvas.width = el.canvas.height = SIZE;
     ctx = el.canvas.getContext('2d');
 
+    state.frase = el.frase.value;
     buildThumbs();
+    buildFundos();
     bindCanvas();
     render();
 
@@ -401,6 +546,25 @@
 
     el.texto.addEventListener('input', function () {
       state.texto = el.texto.value.slice(0, 26);
+      updateThumbs();
+      render();
+    });
+
+    $$('[data-mode]').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        state.modo = btn.dataset.mode;
+        $$('[data-mode]').forEach(function (b) {
+          var ativo = b.dataset.mode === state.modo;
+          b.classList.toggle('is-active', ativo);
+          b.setAttribute('aria-pressed', ativo ? 'true' : 'false');
+        });
+        aplicarModo();
+      });
+    });
+
+    el.frase.addEventListener('input', function () {
+      state.frase = el.frase.value;
+      el.download.disabled = !temConteudo();
       updateThumbs();
       render();
     });
