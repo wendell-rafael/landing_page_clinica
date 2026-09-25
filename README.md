@@ -36,8 +36,16 @@ python3 -m http.server 8000
 # http://localhost:8000
 ```
 
-Para publicar, envie os arquivos para qualquer hospedagem estática
-(GitHub Pages, Netlify, Vercel, Cloudflare Pages).
+## Publicação
+
+O repositório já traz o workflow `.github/workflows/pages.yml`, que publica o
+site no GitHub Pages a cada push na branch `main` (e liga o Pages sozinho na
+primeira execução). Endereço final:
+
+    https://wendell-rafael.github.io/landing_page_clinica/
+
+Também funciona em qualquer outra hospedagem estática (Netlify, Vercel,
+Cloudflare Pages): basta apontar para a raiz do repositório, sem build.
 
 ## Como adicionar uma nova moldura
 
