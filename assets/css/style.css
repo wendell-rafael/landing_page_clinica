@@ -195,6 +195,7 @@ section[id] { scroll-margin-top: 86px; }
   color: var(--tinta-suave);
 }
 .dropzone-empty p { margin: 0; }
+.dropzone-alt { font-size: .85rem; color: var(--tinta-suave); }
 .dropzone-empty svg { color: var(--vermelho); }
 .editor.has-image .dropzone-empty { display: none; }
 
@@ -244,6 +245,24 @@ section[id] { scroll-margin-top: 86px; }
 }
 .text-input:focus { outline: none; border-color: var(--vermelho); }
 .text-input:disabled { background: #F4F5F7; color: #9AA0A8; }
+
+textarea.text-input { resize: vertical; min-height: 4.4em; line-height: 1.45; font-weight: 600; }
+
+.control-sub {
+  font-size: .82rem; text-transform: uppercase; letter-spacing: .09em;
+  color: var(--tinta-suave); margin: 1rem 0 .6rem; font-weight: 700;
+}
+
+.chip-cor { display: inline-flex; align-items: center; gap: .45rem; }
+.chip-cor .swatch {
+  width: 16px; height: 16px; border-radius: 50%; display: inline-block;
+  box-shadow: inset 0 0 0 1px rgba(20, 22, 26, .18);
+}
+
+/* No modo "só texto" a prévia não é arrastável e não há foto a enviar */
+.editor.modo-texto #preview { cursor: default; }
+.editor.modo-texto .dropzone-empty { display: none; }
+.editor.modo-texto .hint-foto { display: none; }
 
 .zoom-row { display: flex; align-items: center; gap: .9rem; }
 .zoom-row output { font-variant-numeric: tabular-nums; font-weight: 700; min-width: 3.6em; text-align: right; }
